@@ -1,0 +1,384 @@
+---
+title: "GLM Advance Data Mining Assignment 1"
+output:
+  word_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+***Part - A***\vspace{3mm}
+\newline
+*QA1. What is the main purpose of regularization when training predictive models?*\vspace{2mm}
+\newline
+***Answer:*** *Regularization is an effective methodology to control the model from over fitting. It tries to optimize the performance of the model on the training data so that the model doesn’t under fit but it also adds a penalty to the model when the model turns to be complex to avoid over fitting. Over fitting takes place when the model gets too attuned to the training data and tries to comprehend the training data by closely capturing both the signals and noise. Here the model captures too many details and loses its ability to generalize well.*\vspace{1mm}
+\newline
+*There are several types of regularization techniques like,*\vspace{1mm}
+\newline
+*1. L1 Regularization also known as Lasso Regularization adds the absolute value of the magnitude of the coefficient as a penalty term to the loss function.*\vspace{1mm}
+\newline
+*2. L2 Regularization also known as Ridge Regularization adds the squared magnitude of the coefficient as the penalty term to the loss function.*\vspace{1mm}
+\newline
+*3. Dropout Regularization drops some of the units in the network or the model during the training. (Mostly used in image classification, speech recognition and natural language processing tasks)*\vspace{1mm}
+\newline
+*Lasso or L1 Regularization is mostly used for Variable Selection, this method doesn’t show any pity towards having unnecessary variables in the model which don’t carry any importance towards the objective function. So, we get to see variable elimination in L1 Regularization.*\vspace{1mm}
+\newline
+*Ridge or L2 Regularization is the most commonly used methodology to control the model from over fitting, it doesn’t remove or eliminate any variables but it does reduce the coefficients or weights of the attributes.*\vspace{1mm}
+\newline
+*Most of the regression models use L1 for variable selection and then use L2 for regularizing the model.*\vspace{1mm}
+\newline
+***By reducing the complexity of the model and by preventing the model from over fitting, regularization can help to improve the generalization performance of the model on unseen data. This is very important because the ultimate goal of predictive modelling is to create models that can make accurate predictions on new, unseen data.***\vspace{4mm}
+\newline
+
+*QA2. What is the role of a loss function in a predictive model? And name two common loss functions for regression models and two common loss functions for classification models.*\vspace{2mm}
+\newline
+***Answer:*** *The loss function in a predictive model is used as a method to evaluate the performance of the model therefore built. It calculates the difference between the values that are predicted to that with the actual values. The end goal of the predictive model is to minimize this difference, which is commonly known as the "error" or "cost".*\vspace{1mm}
+\newline
+***Loss Functions – Regression Models:***\vspace{2mm}
+\newline
+*Mean Squared Error (MSE) - This loss function calculates the mean squared difference between the predicted and actual values of the target variable.*\vspace{1mm}
+\newline 
+***MSE = (1/n) * Σ(yi - ŷi)^2***\vspace{1mm}
+\newline 
+*n is the number of samples,*\vspace{1mm}
+\newline 
+*yi is the actual value of the target variable for the ith sample,*\vspace{1mm}
+\newline 
+*ŷi is the predicted value of the target variable for the ith sample.*\vspace{3mm}
+\newline 
+
+*Mean Absolute Error (MAE) - This loss function measures the average absolute difference between the predicted and actual values of the target variable.*\vspace{1mm}
+\newline 
+***MAE = (1/n) * Σ|yi - ŷi|***\vspace{1mm}
+\newline 
+*n is the number of samples,*\vspace{1mm}
+\newline 
+*yi is the actual value of the target variable for the ith sample,*\vspace{1mm}
+\newline 
+*ŷi is the predicted value of the target variable for the ith sample.*\vspace{4mm}
+\newline 
+
+***Loss Functions – Classification Models:***\vspace{2mm}
+\newline 
+*Binary Cross-Entropy Loss - This loss function is used for binary classification problems where the target variable has two possible values. It measures the difference between the predicted probabilities and the actual binary labels.*\vspace{1mm}
+\newline 
+***BCE = - (1/n) * Σ(yi * log(ŷi) + (1-yi) * log(1-ŷi))***\vspace{1mm}
+\newline 
+*n is the number of samples,*\vspace{1mm}
+\newline 
+*yi is the actual binary label (0 or 1) for the ith sample,*\vspace{1mm}
+\newline 
+*ŷi is the predicted probability of the positive class for the ith sample.*\vspace{3mm}
+\newline 
+
+*Categorical Cross-Entropy Loss - This loss function is used for multi-class classification problems where the target variable has more than two possible values. It measures the difference between the predicted class probabilities and the actual class labels.*\vspace{1mm}
+\newline 
+***CCE = - (1/n) * Σ(yij * log(ŷij))***\vspace{1mm}
+\newline 
+*n is the number of samples,*\vspace{1mm}
+\newline 
+*yij is the actual probability of the jth class for the ith sample (1 if the sample belongs to the jth class and 0 otherwise),*\vspace{1mm}
+\newline 
+*ŷij is the predicted probability of the jth class for the ith sample.*\vspace{4mm}
+\newline 
+
+*QA3. Consider the following scenario. You are building a classification model with many hyper parameters on a relatively small data set. You will see that the training error is extremely small. Can you fully trust this model? Discuss the reason.*\vspace{1mm}
+\newline 
+***Answer:*** *No, we fully cannot trust this model which has an extremely small training error rate. The reason is that the model may have over fit the training data which resulted in a small error rate in the training data whereas the same model will most likely not generalize well to new, unseen data. The end goal of building a predictive model is to generalize well, if the model doesn’t generalize well then there is no point in building a predictive model.*\vspace{1mm}
+\newline 
+
+*While building a machine learning model it is common to observe the trend of a decrease in training error as we increase the complexity of the model. The complexity of the model depends on the size of the data and the algorithm which we are trying to use to build the model.*\vspace{1mm}
+\newline 
+
+*When a model has many hyper parameters and a relatively small data set, there is a high risk of over fitting. Over fitting occurs when a model has become too attuned to the training data and it starts to fit the nose and random fluctuations in the training data instead of following the underlying pattern that generalizes well to the unseen data. As a result, the model may have a very low error on the training set but when predicted on the unseen data the model may not perform well because of over fitting.*\vspace{1mm}
+\newline 
+
+*All in all, a model with an extremely small training error rate indicates over fitting and may not generalize well to new data. We could possibly use techniques such as "cross-validation" and "regularization" to avoid over fitting so that the model performs well on unseen data.*\vspace{4mm}
+\newline 
+
+*QA4. What is the role of the lambda parameter in regularized linear models such as Lasso or Ridge regression models?*\vspace{1mm}
+\newline 
+***Answer:*** *The lambda parameter is also known as the regularization parameter. It plays a crucial role in regularized linear models such as Lasso or Ridge Regression Models.*\vspace{1mm}
+\newline 
+
+*The goal of regularized linear models is to minimize a function i.e., loss function by adding a penalty term to the loss function of the model. The lambda parameter controls the weight of the penalty term.*\vspace{1mm}
+\newline 
+
+*A higher value of lambda will result in a stronger penalty and a simpler model, this may also lead the model to under fit since the model is too simple and is not able to capture the underlying patterns in the data.*\vspace{1mm}
+\newline  
+*While a lower value of lambda will result in a weaker penalty and a more complex model, this will eventually lead to over fitting where the model focused more on the training data and not generalizing well on the test data.*\vspace{1mm}
+\newline 
+
+*For L1 regularization (also known as Lasso Regularization), increasing lambda tends to increase the sparsity of the model which will eventually turn the coefficients to zero. L1 Regularization is helpful for variables/feature selection and also to reduce the dimensionality of the problem.*\vspace{1mm}
+\newline 
+
+*For L2 regularization (also known as Ridge Regularization), increasing lambda tends to decrease the magnitude of the coefficients, which can help prevent over fitting. L2 doesn't eliminate any of the input attributes it generally tries to reduce the coefficients of the input attributes.*\vspace{1mm}
+\newline  
+
+*In both Lasso and Ridge regression, the lambda parameter is typically chosen through a process of cross-validation, where different values of lambda are tried and the one that results in the best performance on a validation set is selected. The end optimal value of lambda will be chosen based on the specific data set and the complexity of the model.*\vspace{5mm}
+\newline 
+
+
+
+***Part - B***\vspace{2mm}
+\newline
+*Setting default values to get a clean output*
+```{r}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+*Loading Required Packages*
+```{r}
+library("class")
+library("caret")
+library("ISLR")
+library("ggplot2")
+library("esquisse")
+library("tinytex")
+library("tidyverse")
+library("dplyr")
+library("glmnet")
+library("glmnetUtils")
+library("corrplot")
+library("moments")
+```
+
+*Loading Carseats Data*
+```{r}
+data <- Carseats
+```
+
+*Data Subsetting*\vspace{1mm}
+\newline
+*Selecting a Subset of Data*
+```{r}
+new_data <- data %>% select("Sales","Price","Advertising","Population","Age","Income","Education")
+```
+
+*Data Cleaning*\vspace{1mm}
+\newline
+*Checking for Null Values*
+```{r}
+colMeans(is.na(new_data))
+```
+*Exploratory Data Analysis*\vspace{1mm}
+\newline
+*Checking if the input attributes are normally distributed or not*
+```{r}
+#Price
+hist(new_data$Price, xlab = "Price", main = "Price Distribution")
+skewness(new_data$Price)
+```
+*As we can see the data seems to be normally distributed and the skewness value of -0.12 is close to 0, so there shouldn't be a need to transform the Price Variable.*\vspace{2mm}
+\newline
+
+```{r}
+#Advertising
+hist(new_data$Advertising, xlab = "Advertising", main = "Advertising Distribution")
+skewness(new_data$Advertising)
+```
+*Here the advertising attribute seems to be skewed as it has a long tail towards the right indicating that the data is "right skewed", so we need to possibly transform the data in order to get it normally distributed. Also, the skewness values of 0.63 is greater and no where close to 0.*\vspace{2mm}
+\newline
+
+```{r}
+#Population
+hist(new_data$Population, xlab = "Population", main = "Population Distribution")
+skewness(new_data$Population)
+```
+*Although the data doesn't have a bell shaped curve the skewness value of -0.05 is close to 0, so there shouldn't be a need to transform the Population Variable.*\vspace{2mm}
+\newline
+
+```{r}
+#Age
+hist(new_data$Age, xlab = "Age", main = "Age Distribution")
+skewness(new_data$Age)
+```
+*Although the data doesn't have a bell shaped curve the skewness value of -0.07 is close to 0, so there shouldn't be a need to transform the Age Variable.*\vspace{2mm}
+\newline
+
+```{r}
+#Income
+hist(new_data$Income, xlab = "Income", main = "Income Distribution")
+skewness(new_data$Income)
+```
+*Although the data doesn't have a bell shaped curve the skewness value of 0.04 is close to 0, so there shouldn't be a need to transform the Income Variable.*\vspace{2mm}
+\newline
+
+```{r}
+#Education
+hist(new_data$Education, xlab = "Education", main = "Education Distribution")
+skewness(new_data$Education)
+```
+*Although the data doesn't have a bell shaped curve the skewness value of 0.04 is close to 0, so there shouldn't be a need to transform the Education Variable.*\vspace{2mm}
+\newline
+
+*Data Transformation*\vspace{1mm}
+\newline
+*Transforming only the Advertising Column*
+```{r}
+new_data$Advertising <- log(new_data$Advertising + 1)
+hist(new_data$Advertising, xlab = "Advertising", main = "Advertising Distribution")
+skewness(new_data$Advertising)
+```
+*Since the Advertising variable had many zero values in them we couldn't perform log() transformation, we performed log(x+1) transformation where x is the data frame. Now after the transformation we could see that the skewness of the data is -0.19 which is closer to 0 when compared to the non-transformed value of 0.63.*\vspace{3mm}
+\newline
+
+*Checking if the Target Variable is Skewed or Evenly Distributed*
+```{r}
+hist(new_data$Sales, xlab = "Sales Units", main="Sales Distribution")
+plot(new_data$Sales, xlab = "Count", ylab="Sales Values",main="Scatter Plot")
+skewness(new_data$Sales)
+```
+*Usually we don't normalize the target or the dependent variable here in our case i.e. Sales. But there might be a situation where we might have to normalize the target variable as well, example: if the data is skewed and the has outliers.*\vspace{1mm}
+\newline
+*In this case we can see that the data is properly distributed by the histogram plot and we could also see that there are no outliers through the scatter plot. Finally the skewness value for the Sales attribute is 0.18 which is closer to zero. So, we can skip normalizing the target variable.*\vspace{2mm}
+\newline
+
+*Correlation Plot*
+```{r}
+corrplot(cor(new_data))
+```
+*Finally to end the "Exploratory Data Analysis" we are using correlation plot to check the distinct relation of the target variable i.e. Sales with that to the other input variables.*\vspace{1mm}
+\newline
+*Sales has negative correlation with Price and Age (orange shaded circles).*\vspace{1mm}
+\newline
+*Sales has positive correlation with Advertising and Income (blue shaded circles).*\vspace{2mm}
+\newline
+
+***Preparing for Data Modelling***\vspace{1mm}
+\newline
+*For the given set of questions there isn't a need to partition the data into train, validate and test. We could use Cross Validation in order to tune the hyper parameters*\vspace{2mm}
+\newline
+*Data Normalization*\vspace{1mm}
+\newline
+*Scaling and Centering the input variables using Z score Normalization*
+```{r}
+set.seed(456)
+Norm_Train <- preProcess(new_data[,-1], method = c("scale","center"))
+#-1 refers to excluding the target variable from normalization
+
+Normalized_Train <- predict(Norm_Train, new_data)
+```
+
+*Since glmnet accepts the independent variables to be in a matrix format and the dependent variable to be in a vector format, we are transforming these variables.*\vspace{1mm}
+\newline
+
+*Data Transformation*\vspace{1mm}
+\newline
+*Input Variables - Matrix Format*\vspace{1mm}
+\newline
+*Target Variable - Vector*\vspace{1mm}
+\newline
+```{r}
+train_x <- as.matrix(Normalized_Train[2:7])
+#Independent Variables/Input Variables
+
+train_y <- Normalized_Train[[1]]
+#Dependent Variables/Output Variable
+```
+
+*1. Build a Lasso regression model to predict Sales based on all other attributes ("Price", "Advertising", "Population", "Age", "Income" and "Education"). What is the best value of lambda for such a lasso model?*
+```{r}
+set.seed(789)
+cvfit = cv.glmnet(train_x,train_y,data=Normalized_Train,nfolds=5,alpha=1)
+cvfit
+```
+*Best Lambda Value*\vspace{1mm}
+\newline
+*cv.glmnet is a useful package that helps us know the lambda.min which represent the lambda value that is optimal and minimizes the cross validation mean square of the error.*
+```{r}
+cvfit$lambda.min
+```
+*As we can see 0.019 can be considered as the best lambda value for the lasso model which we have built.*\vspace{2mm}
+\newline
+
+*Lambda 1SE*
+```{r}
+cvfit$lambda.1se
+```
+*There's also an other lambda value which we can use if it is accepted to have a bigger lambda value which will result in a more regularized model.*\vspace{1mm}
+\newline 
+*This ensures that the cross validation error is still only up to one standard deviation bigger than the optimal value. For this model built the lambda value is 0.258.*\vspace{2mm}
+\newline
+
+*Looking at the coefficients that was eliminated*
+```{r}
+coef(cvfit, s="lambda.min")
+```
+*When the lambda is set to lambda.min i.e. 0.01907519 we can see that none of the attributes has been eliminated from the model.*\vspace{1mm}
+\newline
+
+```{r}
+coef(cvfit, s="lambda.1se")
+```
+*When the lambda is set to lambda.1se i.e. 0.2580965 we can see that two of the attributes have been eliminated from the model i.e. "Population" and "Education" have been eliminated.*\vspace{1mm}
+\newline
+
+*Plotting the Model*
+```{r}
+plot(cvfit)
+```
+*The Optimal (Min) and 1SE lambda values with respect to the above graph*
+```{r}
+lambda_min <- log(0.01907519)
+lambda_min
+
+lambda_1se <- log(0.2580965)
+lambda_1se
+```
+*2. What is the coefficient for the price (normalized) attribute in the best model (i.e. model with the optimal lambda)?*
+```{r}
+coef(cvfit, s="lambda.min")
+```
+*The coefficient for the "Price Attribute" when the lambda is at minimum i.e. Optimal Lambda is -1.33844979.*\vspace{2mm}
+\newline
+
+*3. How many attributes remain in the model if lambda is set to 0.01? How that number changes if lambda is increased to 0.1? Do you expect more variables to stay in the model (i.e., to have non-zero coefficients) as we increase lambda? *
+```{r}
+#lambda = 0.01
+coef(cvfit,s=0.01)
+```
+*When lambda (s) = 0.01 we have all the input attributes.*\vspace{1mm}
+\newline
+
+```{r}
+#lambda = 0.1
+coef(cvfit,s=0.1)
+```
+*Whereas when we increased the lambda value from 0.01 to 0.1 we see that the "Education" and "Population" attribute has been removed by the model.*\vspace{2mm}
+\newline
+*In general when we increase the value of the lambda we expect the number of attributes to reduce,the lambda value controls the strength of the L1 penalty term, which shrinks the coefficients towards zero. When lambda is very small, the L1 penalty has a negligible effect and the regression model behaves like ordinary least squares (OLS) regression. In this case, the model may include all the available attributes, resulting in over fitting (s = 0.01)*\vspace{2mm}
+\newline
+*As lambda increases, the L1 penalty term becomes more dominant, causing some coefficients to shrink towards zero and some to become exactly zero. The coefficients of the attributes that become exactly zero are eliminated from the model, resulting in a reduction in the number of attributes (s = 0.1).*\vspace{2mm}
+\newline
+*Also, increasing the lambda will also result in reducing the coefficients of the attributes*\vspace{1mm}
+\newline
+*i.e. Price with 0.01 lambda = -1.34888753 whereas*\vspace{1mm}
+\newline
+*Price with 0.1 lambda = -1.2468705*\vspace{2mm}
+\newline
+
+*4. Build an elastic-net model with alpha set to 0.6. What is the best value of lambda for such a model?*
+```{r}
+cvfit1 <- cv.glmnet(train_x,train_y,data=Normalized_Train,nfolds=10,alpha=0.6)
+cvfit1
+```
+*cv.glmnet() plot*
+```{r}
+plot(cvfit1)
+```
+*Looking at the attributes that were eliminate when the model was at lambda.min and alpha = 0.6*
+```{r}
+coef(cvfit1,s="lambda.min")
+```
+*The cvfit1 model at lambda.min resulted in eliminating none of the input attributes.*\vspace{2mm}
+\newline
+
+*Optimal Lambda*\vspace{1mm}
+\newline
+*cvfit1 has a wrapper to it called as lambda.min which let's us know the best lambda value.*
+```{r}
+cvfit1$lambda.min
+```
+*The best value of lambda when the alpha = 0.6 is 0.0555574*
