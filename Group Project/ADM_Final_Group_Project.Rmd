@@ -1,0 +1,792 @@
+---
+title: "ADM Final Group Project"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+*Setting default values to get a clean output*
+```{r}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+*Loading all the required packages*
+```{r}
+library("readr")
+library("ISLR")
+library("caret")
+library("class")
+library("e1071")
+library("dplyr")
+library("tidyverse")
+library("ggplot2")
+library("esquisse")
+library("gmodels")
+library("MASS")
+library("broom")
+library("modelr")
+library("Hmisc")
+library("missForest")
+library("rpart")
+library("rattle")
+library("pROC")
+library("ROCR")
+library("cutpointr")
+library("ROSE")
+library("moments")
+library("glmnet")
+library("glmnetUtils")
+library("VIM")
+library("mice")
+library("xgboost")
+library("randomForest")
+library("ranger")
+```
+
+*Loading the Data*
+```{r}
+data <- read.csv("train_v3.csv")
+```
+
+*Exploratory Data Analysis*\vspace{1mm}
+\newline
+
+*Column and Row Count*
+```{r}
+ncol(data)
+nrow(data)
+```
+*There are 762 columns and 79999 rows in the initial data that we loaded.*\vspace{2mm}
+\newline
+
+*Column Names*
+```{r}
+col_names <- (colnames(data[1:20]))
+col_names
+```
+*Upon examining the column names, it is not readily apparent what each one represents. Additionally, the naming convention for the other columns follows the pattern of starting with the letter "f" followed by the column count. As a result, it may be challenging to discern the contents of each column based on its name alone.*\vspace{2mm}
+\newline
+
+*Row Values*
+```{r}
+row_values <- data[1:5,1:5]
+row_values
+```
+*Our analysis aimed to investigate the type of information stored in the first five attributes. However, it was not immediately apparent from a cursory examination of the data since "f1" contained integer type values, "f3" contained double type values in decimal form, while "f4" and "f5" also contained integer values. The challenge, however, was not solely the data type, but rather the inability to ascertain the meaning of each value and its significance in determining the ultimate decision, i.e., whether a loan will default or not and if it is going to default what is the % of default which can be considered as a loss to the organisation. It is therefore crucial to gain a comprehensive understanding of the nature of the information contained in each attribute to draw meaningful conclusions.*\vspace{2mm}
+\newline
+
+*Target Attribute*
+```{r}
+target <- data[1:5,762]
+target
+```
+*The target attribute has values between 0 to 100, if the customer takes 100,000 Loan and repays 90,000 then we say that the customer defaulted 10% of the total loan taken and the loss value in the target attribute would be 10.*\vspace{2mm}
+\newline
+
+*Data Cleaning and Feature Reduction*
+```{r}
+for (i in seq_along(data)) {
+  tmp <- data[[i]]
+  if (class(tmp) %in% c("numeric", "integer")) {
+    if (any(is.na(tmp))) {
+      tmp <- tmp[!is.na(tmp)]
+      if (length(tmp) == 0 || var(tmp) == 0) {
+        print(paste("no variance in column", names(data)[i]))
+      }
+    } else {
+      if (var(tmp) == 0) {
+        print(paste("no variance in column", names(data)[i]))
+      }
+    }
+  }
+}
+```
+*Eliminating the columns with 0 variance*
+```{r}
+data_no_var <- subset(data, select = -c(f33, f34, f35, f37, f38, f678, f700, f701, f702, f736, f764))
+```
+
+
+*Missing Values/NAs*\vspace{1mm}
+\newline
+
+*Looking if there are any NAs or Missing Values in the Data*
+```{r}
+missing_value_cols <- colMeans(is.na(data))
+missing_value_cols <- round(missing_value_cols,3)
+missing_value_cols[1:20]
+```
+*Just we are looking at the initial 20 columns to know if there exists any NAs and it is likely seen that there are a greater count of columns with NAs in the data set.*\vspace{2mm}
+\newline
+
+*Max NA % in the features*
+```{r}
+max(missing_value_cols)
+```
+*As we can see above we get to know that the maximum % of one or more than one of the features with missing values in the data set is 17.8%, we are now basing our assumptions and want to eliminate the columns with > 10% of missing values in them.*\vspace{2mm}
+\newline
+
+*Sub-Setting NAs > 10 % Missing Values into a Data Frame*
+```{r}
+data_nas <- data[, colMeans(is.na(data)) > 0.1]
+
+names_remove <- colnames(data_nas)
+names_remove
+```
+*Here, we are trying to subset the columns where the mean value of the missing values in that column is > 10 % of the entire observations, so that we can use these columns to drop them in the next step.*\vspace{2mm}
+\newline
+
+*Before dropping the columns let's check the correlation of the above printed attributes with the target variable - loss*\vspace{2mm}
+\newline
+
+*Correlation - Independent & Dependent*
+```{r}
+# For calculating correlation we need to omit the NAs first
+data_no_nas <- na.omit(data)
+
+# Sub-Setting the columns
+data_cor <- subset(data_no_nas, select = c(names_remove, "loss"))
+
+# Correlation between independent variables and dependent variable
+correlations <- cor(data_cor[,1:25], data_cor$loss)
+
+# Rounding the values
+round_cor <- round(correlations,4)
+
+# Print the correlations
+print(round_cor)
+```
+*It can be noted that the columns with >10% of NAs are not having a significant relationship with the target variable - loss, the correlation values are close to 0 which is more likely a case of no existence of correlation between these attributes and the target variable - loss*\vspace{2mm}
+\newline
+
+*Let's plot few independent variables with the dependent variable loss*\vspace{2mm}
+\newline
+
+*Scatter Plot*
+```{r}
+plot(data_cor$f668, data_cor$loss, main="Correlation Plot",
+     xlab="Independent Var (F668)", ylab="Dependent Var (Loss)")
+```
+```{r}
+plot(data_cor$f669, data_cor$loss, main="Correlation Plot",
+     xlab="Independent Var (F669)", ylab="Dependent Var (Loss)")
+```
+*As we can see from the above plot there exists no solid correlation between the independent and the dependent attributes. We can now go ahead and eliminate the columns with >10% of missing values. *\vspace{2mm}
+\newline
+
+
+*Dropping Columns with NAs > 10 %*
+```{r}
+data_less_nas <- subset(data_no_var, select = -c(f159, f160, f169, f170, f179, f180, f189, f190, f330, f331, f340, f341, f422, f618, f619, f653, f662, f663, f664, f665, f666, f667, f668, f669, f726))
+```
+*Instead of removing all the attributes where we have NAs we are setting a threshold i.e. if a column has > 10 % of missing values we are dropping them. By dropping all the attributes with missing values we might lose a greater percentage of important attributes and if we do this by row instances then we would be left with nearly 50 % less data, so we took this approach.*\vspace{2mm}
+\newline
+
+*Updated Column Count*
+```{r}
+ncol(data_less_nas)
+```
+*Earlier it was 762 attributes, after removing 25 attributes which had >10 % missing values (NAs) and the columns with zero variance we now have the updated count of columns to be 726.*\vspace{2mm}
+\newline
+
+*But still there are attributes with < 10 % of missing values and it's important for us to treat them and still we need to reduce the features count which will help us build models with better efficiency.*\vspace{2mm}
+\newline
+
+*Imputting Missing Values*
+```{r}
+# Performing median imputation on data_less_nas
+set.seed(123)
+
+na_median <- function(x) {
+  ifelse(is.na(x), median(x, na.rm=TRUE), x)
+}
+
+data_clean <- data_less_nas %>% mutate_all(na_median)
+```
+*For the imputation we have tried many methods such as missForest, multiple imputation using mice and knn imputation, but all of these methods were computationally very expensive so we had to work around with median imputation since it was computationally efficient and robust to any presence of outliers in the data.*\vspace{2mm}
+\newline
+
+*Let's check if there are any NAs*
+```{r}
+anyNA(data_clean)
+```
+
+*Data Transformation*
+```{r}
+data_clean["PD"] <- ifelse(data_clean$loss>0,1,0)
+```
+*Now we have a new column called PD which is a binary column having the values as 0 or 1.*\vspace{2mm}
+\newline
+
+*Balancing Both the Classes with the help of Synthetic Data* 
+```{r}
+data_balanced <- ovun.sample(PD ~ ., data = data_clean, method = "both", p=0.5, N=100000, seed = 123)$data
+```
+*Balancing the data set is quite important, if not dealt this may cause the model to predict the values only of the class which has greater number of observations, in our case "not default (0)" has greater number of observations, but we want accurate predictions for "default (1)".*\vspace{2mm}
+\newline
+
+*Row Count for PD Values - Before Balancing*
+```{r}
+table(data_clean$PD)
+```
+*Row Count for PD Values - After Balancing*
+```{r}
+table(data_balanced$PD)
+```
+*We can see the difference between the classes, imbalanced data sets can cause a serious problem while modelling.*\vspace{2mm}
+\newline
+
+*Decision Variable -> Factor*
+```{r}
+data_clean$PD <- as.factor(data_clean$PD)
+data_balanced$PD <- as.factor(data_balanced$PD)
+```
+
+*Visualizing the target variable - Before Balancing*
+```{r}
+ggplot(data_clean, aes(x = PD)) +
+geom_bar(fill="orange") +
+scale_x_discrete(labels = c("0", "1"),drop=F) +
+labs(x="Probability Dist.", y="Count", title="Distribution of Probability") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+
+*Visualizing the target variable - After Balancing*
+```{r}
+ggplot(data_balanced, aes(x = PD)) +
+geom_bar(fill="blue") +
+scale_x_discrete(labels = c("0", "1"),drop=F) +
+labs(x="Probability Dist.", y="Count", title="Distribution of Probability") +
+theme(plot.title = element_text(hjust = 0.5))
+```
+*Now, we have a data set which is balanced in a better way. Both, the classes are having almost equal distribution.*\vspace{2mm}
+\newline
+
+*Now, we have to begin with feature reduction, in order to do feature selection it's important for us to replicate the same features onto the test set, so we are partitioning the data into train and validate*
+
+*Data Partition*
+```{r}
+set.seed(123)
+split_data <- createDataPartition(data_balanced$PD, p=0.75, list=F)
+train <- data_balanced[split_data,]
+validate <- data_balanced[-split_data,]
+```
+
+*Feature Reduction along with Normalization*
+```{r}
+preprocess_features_model <- preProcess(train[,-c(1,726,727)],
+                    method=c("nzv","corr","center","scale"),
+                    levels = list(PD = c("0", "1")))
+                                               
+train_less_features <- predict(preprocess_features_model, train)
+validate_less_features <- predict(preprocess_features_model, validate)
+```
+*Time to reduce the features, previously we have removed features with greater than 10% NAs and the features which have exactly 0 variance. But still there might be few columns with variance almost closer to 0 and having those features aren't going to add any value to the modelling task so now we are going to remove the attributes that have variance closing to zero (0) and also the attributes that are highly correlated with each other, because multi-collinearlity is going to be a problem for the modelling task.*\vspace{2mm}
+\newline
+
+*Updated Row Count*
+```{r}
+ncol(train_less_features[,-c(1,255,256)])
+ncol(validate_less_features[,-c(1,255,256)])
+```
+*Now the features have been reduced to 253 which is a great reduction from 726 to 253 excluding (id, PD and loss).*\vspace{2mm}
+\newline
+
+***Lasso for Variable Selection***\vspace{2mm}
+\newline
+*In Lasso Model the coefficients are shrunk towards zero and towards each other. But when this happens if the independent variables do not have the same scale, the shrinking is not fair. Two independent variables with different scales will have different contributions, so it is important to normalize the attributes.*\vspace{1mm}
+\newline
+
+*Lasso model requires the y variable to numeric, so converting the factor to numeric values*
+```{r}
+train_less_features$PD <- ifelse(train_less_features$PD == "0", 0, 1)
+```
+
+*Transforming the data into input and output for lasso model*
+```{r}
+input <- as.matrix(train_less_features[,-c(1,255,256)])
+output <- as.vector(train_less_features[,256])
+```
+
+*Lasso for Variable Selection*
+```{r}
+set.seed(123)
+glm_model <- cv.glmnet(x=input, y=output, data=train_less_features, family="binomial", type.measure= "auc", nfolds=10, alpha=1)
+
+glm_model
+
+plot(glm_model)
+```
+*Storing the variables which have been retained when lambda=min*
+```{r}
+# Coefficients of columns at lambda.min
+coef_lasso <- as.matrix(coef(glm_model, s="lambda.min"))
+
+# Getting the column names of non zero attributes at lambda.min
+var_lasso <- rownames(coef_lasso)[coef_lasso != 0]
+
+# Removed Intercept
+var_lasso <- var_lasso[-1]
+
+# Sub-Setting the Non-Zero Columns along with their Coefficient values
+lasso_coefs <- as.data.frame(coef_lasso[var_lasso,])
+
+# Converting Row to Column
+lasso_data <- rownames_to_column(lasso_coefs, var = "name")
+
+# Changing the column name
+colnames(lasso_data)[2] <- "coefficients"
+```
+*Now, we have 233 attributes that deemed to be important for the probability distribution task.*\vspace{2mm}
+\newline
+
+*Creating a Data Frame for Train and Validation*
+```{r}
+names_lasso <- lasso_data[,1]
+train_lasso_data <- train_less_features[,names_lasso]
+validate_lasso_data <- validate_less_features[,names_lasso]
+
+# Train
+train_less_features$PD <- as.factor(train_less_features$PD)
+train_mod <- cbind(train_lasso_data, train_less_features$PD)
+colnames(train_mod)[234] <- "PD"
+
+# Validate
+validate_less_features$PD <- as.factor(validate_less_features$PD)
+validate_mod <- cbind(validate_lasso_data, validate_less_features$PD)
+colnames(validate_mod)[234] <- "PD"
+```
+
+*This model is going to be built by using all the 233 attributes which were selected while using the lasso regression model, we want to assess the performance of the model using just the lasso selected variables.*\vspace{1mm}
+\newline
+
+*There are two steps which is going to be the main focus area from now on*\vspace{1mm}
+\newline
+*1. Probability Default Model - We would want to know the probability of a customer defaulting the loan i.e. if a customer defaults the entry will be returned as 1 and if he doesn't default then it is going to be 0.*\vspace{1mm}
+\newline
+*2. Loss Given Default Model- If the customer has defaulted the loan what is the loss incurred to the bank by the customer, let's say customer has paid 90% of the loan and defaulted 10% then the LGD is going to be 0.1 or 10.*
+
+
+***Probability Default Model***\vspace{2mm}
+\newline
+
+*Model Building*
+```{r}
+set.seed(123)
+rf_model <- randomForest(PD~.,data=train_mod, ntree=100, mtry=5)
+rf_model
+```
+*rf_model prediction on validate_mod*
+```{r}
+pred_val <- predict(rf_model, validate_mod[,-234], type="prob")
+validation_testing <- as.data.frame(cbind(validate_mod[,234],pred_val))
+```
+
+*Cut-Off for Default and Not Default*
+```{r}
+ROC_pred_rf_test <- prediction(pred_val[,2],validation_testing$V1)
+ROCR_perf_rf_test <- performance(ROC_pred_rf_test,'tpr','fpr')
+acc_rf_perf <- performance(ROC_pred_rf_test,"acc")
+ROC_pred_rf_test@cutoffs[[1]][which.max(acc_rf_perf@y.values[[1]])]
+```
+*If the predicted probability class of 1 is greater than 0.6 then it is going to be considered as defaulted, else not defaulted.*\vspace{2mm}
+\newline
+
+*Setting the Cut-Off*
+```{r}
+validation_testing['pred'] <- as.factor(ifelse(validation_testing$`1`>0.6,1,0))
+validation_testing$V1 <- as.factor(validation_testing$V1)
+
+# 0 and 1 are being changed to 1 and 2 so arranging it back to the original levels
+validation_testing$V1 <- ifelse(validation_testing$V1=="1","0","1")
+```
+
+*Performance Metrics Evaluation*
+```{r}
+CrossTable(validation_testing$V1, validation_testing$pred,prop.chisq = F)
+```
+***Performance Metrics - PD Model***\vspace{.5mm}
+\newline
+*True Positive (TP) - 12366*\vspace{.5mm}
+\newline
+*True Negative (TN) - 12559*\vspace{.5mm}
+\newline
+*False Positive (FP) - 5*\vspace{.5mm}
+\newline
+*False Negative (FN) - 69*\vspace{.5mm}
+\newline
+*Miscalculations - 74*\vspace{1mm}
+\newline
+*Accuracy = TP+TN/TP+TN+FP+FN = 12366+12559/24999 = 99.70 %*\vspace{.5mm}
+\newline
+*Specificity (TNR) = TN/TN+FP = 12559/12559+5 = 99.96 %*\vspace{.5mm}
+\newline
+*Sensitivity (TPR) = TP/TP+FN = 12366/12366+69 = 99.44 %*\vspace{.5mm}
+\newline
+*Precision = TP/TP+FP = 12366/12366+5 = 99.99 %*\vspace{.5mm}
+\newline
+*F-1 Score = 2x(Precision x Recall)/(Precision + Recall) = 99.71%*\vspace{1mm}
+\newline
+
+*The main aim for us while building the PD model is to capture the default values without any wrong predictions, the cost of False Negative > False Positive, but here when we look at the TPR we are doing great at 99.43%, also the F-1 Score and Precision are above nearly 99%.*\vspace{2mm}
+\newline
+
+*Area Under Curve Value and Plot*
+```{r}
+roc.curve(validation_testing$V1, validation_testing$pred, plotit = T)
+```
+*We also see that we have a AUC of 99.7%*\vspace{2mm}
+\newline
+
+*The model built using the lasso attributes is considerably generalizing well on the unseen data i.e. validation data, the key advantage of going with the model that selected the features based on the Lasso model is that it selects a subset of attributes that are most relevant to predicting the target variable. These attributes are contextually more interpretative and easier to explain in the context of the business problem.*\vspace{2mm}
+\newline
+
+***We can store rf_model to be used for predicting on the test set. As we have seen that this model has been built using 233 Features and has the best performance in terms of Precision, AUC, Sensitivity as well as F-1 Score, so we are going to store rf_model as the final model to be used on the test set.***\vspace{2mm}
+\newline
+
+*Now, we begin to build the Loss Given Default Model (LGD), once this model is built we will work on the test set first to get the PD and then to evaluate the loss of the defaulted customers.*\vspace{2mm}
+\newline
+
+***Loss Given Default***\vspace{1mm}
+\newline
+
+*The initial data set that has been loaded in the model has been saved with a variable called "data".*\vspace{2mm}
+\newline
+
+*For the loss given default model we will be supplying only the data related to default, the combined output i.e. PD will give the default and no default and LGD will give the extent of loss incurred by the customers who have defaulted.*\vspace{2mm}
+\newline
+
+*Data Transformation*
+```{r}
+data["PD"] <- ifelse(data$loss>0,1,0)
+```
+
+*Count of Observations - Default and Not Default*
+```{r}
+table(data$PD)
+```
+*Normalizing the decision variable*
+```{r}
+data$loss <- (data$loss/100)
+```
+*The decision variable "loss" has a large range of values, it can cause numerical instability and make it difficult for the algorithm to converge to a solution. Normalizing the variable can help to reduce the range of values and make it easier for the algorithm to find an optimal solution.*\vspace{2mm}
+\newline
+
+*Defaulted Observations*
+```{r}
+# Sub-Set
+data_lgd <- subset(data, data$PD == 1)
+
+# Eliminating id and pd column created since we now have defaulted values
+data_lgd <- data_lgd[,-c(1,763)]
+```
+
+*Data Partition*
+```{r}
+set.seed(123)
+data_split <- createDataPartition(data_lgd$loss, p=0.75, list=F)
+train_data <- data_lgd[data_split,]
+validate_data <- data_lgd[-data_split,]
+```
+
+*Feature Selection and Normalization*
+```{r}
+preprocess_lgd <- preProcess(train_data[,-761], method = c("nzv", "corr", 
+                  "medianImpute","center","scale"))
+
+train_lgd <- predict(preprocess_lgd, train_data)
+validate_lgd <- predict(preprocess_lgd, validate_data)
+```
+*We are trying to get rid of the attributes which have near to zero variance, which are highly correlated among each other and finally imputting the missing values with median. We are also trying to scale the attributes so that all the input attributes are on the same scale. Note: We used directly the preprocess technique to do the feature selection instead of using iterative steps.*  
+
+*Updated Column Count*
+```{r}
+ncol(train_lgd[,-250])
+```
+*The above used feature reduction technique has resulted in 249 attributes which have no attributes that are highly correlated, no attributes with high collinearity and no missing values. This count is after excluding the loss attribute.*\vspace{2mm}
+\newline
+
+*But, this is still a huge count, let's try to feed this to the most powerful sparse feature selection algorithm i.e. Lasso Model.*\vspace{2mm}
+\newline
+
+*Transforming the data into input and output for lasso model*
+```{r}
+input <- as.matrix(train_lgd[,-250])
+output <- as.vector(train_lgd[,250])
+```
+
+*Lasso for Variable Selection*
+```{r}
+set.seed(123)
+glm_model_lgd <- cv.glmnet(x=input, y=output, data=train_lgd, family="gaussian", type.measure= "mse", nfolds=10, alpha=1)
+
+glm_model_lgd
+
+plot(glm_model_lgd)
+```
+*At lambda.min we have 119 attributes that have been selected for the loss given default task.*\vspace{2mm}
+\newline
+
+*Storing the variables which have been retained when lambda=min*
+```{r}
+# Coefficients of columns at lambda.min
+coef_lasso_lgd <- as.matrix(coef(glm_model_lgd, s="lambda.min"))
+
+# Getting the column names of non zero attributes at lambda.min
+var_lasso_lgd <- rownames(coef_lasso_lgd)[coef_lasso_lgd != 0]
+
+# Removed Intercept
+var_lasso_lgd <- var_lasso_lgd[-1]
+
+# Sub-Setting the Non-Zero Columns along with their Coefficient values
+lasso_coefs_lgd <- as.data.frame(coef_lasso_lgd[var_lasso_lgd,])
+
+# Converting Row to Column
+lasso_data_lgd <- rownames_to_column(lasso_coefs_lgd, var = "name")
+
+# Changing the column name
+colnames(lasso_data_lgd)[2] <- "coefficients"
+```
+
+*Sub-Setting Attributes*
+```{r}
+names_lasso_lgd <- lasso_data_lgd[,1]
+train_lasso_data_lgd <- train_lgd[,names_lasso_lgd]
+validate_lasso_data_lgd <- validate_lgd[,names_lasso_lgd]
+
+# Train
+train_mod_lgd <- cbind(train_lasso_data_lgd, train_lgd$loss)
+colnames(train_mod_lgd)[120] <- "loss"
+
+# Validate
+validate_mod_lgd <- cbind(validate_lasso_data_lgd, validate_lgd$loss)
+colnames(validate_mod_lgd)[120] <- "loss"
+```
+
+*Since, we have the selected features that deemed to be important let's build a ridge regression model.*\vspace{1mm}
+\newline
+
+*Data Preparation*
+```{r}
+x_input <- as.matrix(train_mod_lgd[,-120])
+y_output <- as.vector(train_mod_lgd[,120])
+```
+
+*Model Building*
+```{r}
+set.seed(123)
+ridge_model <- cv.glmnet(x=x_input, y=y_output, data=train_mod_lgd, alpha=0, family = "gaussian", nfolds = 10, type.measure = "mae", nlambda=100)
+
+ridge_model
+
+plot(ridge_model)
+```
+*Prediction Phase - LGD Model*
+```{r}
+# Validating the LGD model.
+x_input_val <- as.matrix(validate_mod_lgd[,-120])
+y_output_val <- as.vector(validate_mod_lgd[,120])
+
+# Prediction
+predicted_loss <- predict(ridge_model, s = ridge_model$lambda.min, newx = x_input_val)
+predicted_loss <- abs(round(predicted_loss,2))
+
+# Evaluating Performance on Validation
+Error_lgd = mean(abs((predicted_loss - y_output_val)))
+print(Error_lgd)
+```
+*The resulted MAE is 0.05*\vspace{1mm}
+\newline
+
+*Appending Actuals and Predicted*
+```{r}
+check_perf <- cbind(y_output_val,predicted_loss)
+colnames(check_perf) <- c("Actual","Expected")
+head(check_perf,n=10)
+```
+*Now, since we have both the models for classification and regression, let's pool the test data in and start the prediction phase*\vspace{2mm}
+\newline
+
+*Test Set Prediction*
+```{r}
+test_data <- read.csv("test__no_lossv3.csv")
+```
+
+*Dropping a Redundant ID Column*
+```{r}
+test_data <- test_data[,-1]
+```
+
+*Row and Column Count*
+```{r}
+ncol(test_data)
+nrow(test_data)
+```
+*First we will be using the PD model to get the Default and No Default Customers and then eliminate the non default customers for the final LGD Model*\vspace{2mm}
+\newline
+
+*PD Model Prediction*\vspace{2mm}
+\newline
+*Pre-Processing Test Data*\vspace{1mm}
+\newline
+*Selecting Features with >10% NA*
+```{r}
+data_nas_test <- test_data[, colMeans(is.na(test_data)) > 0.1]
+
+names_remove_test <- colnames(data_nas_test)
+names_remove_test
+```
+
+*Dropping Features with >10% NA*
+```{r}
+data_nas_test <- subset(test_data, select = -c(f159, f160, f169, f170, f179, f180, f189, f190, f330, f331, f340, f341, f422, f618, f619, f653, f662, f663, f664, f665, f666, f667, f668, f669, f726))
+```
+*These features are the same that have been removed in the training using names_remove, it can be verified there.*\vspace{2mm}
+\newline
+
+*Zero variance columns being removed*
+```{r}
+data_no_var_test <- subset(data_nas_test, select = -c(f33, f34, f35, f37, f38, f678, f700, f701, f702, f736, f764))
+```
+
+*The attributes with less variance will be removed in the preprocess_feature_model, ideally the nzv method should remove zero variance as well but in the PD model we first eliminated attributes with zero variance so we are first removing 0 variance features.*\vspace{2mm}
+\newline
+
+*Now, let's try to impute the missing values using median and then pass the attributes to the pre-process function.*\vspace{2mm}
+\newline
+
+*Imputting Median Values*
+```{r}
+# Performing median imputation on data_nas_test
+data_clean_test <- data_no_var_test %>% mutate_all(na_median)
+```
+
+*Check for NAs*
+```{r}
+anyNA(data_clean_test)
+```
+
+*Predicting Pre-Processed Model built on train onto the test*
+```{r}
+test_norm_pd <- predict(preprocess_features_model, data_clean_test)
+```
+
+*Updated Column Count*
+```{r}
+ncol(test_norm_pd[,-1])
+```
+*After excluding the id attribute the count of test data is similar to that of the train attributes, now let's subset further using the columns that were selected during the lasso model.*\vspace{2mm}
+\newline
+
+*Sub-Set Lasso Attributes*
+```{r}
+# names_lasso is having the column names selected after using lasso model
+id <- test_norm_pd[,1]
+test_mod <- test_norm_pd[,names_lasso]
+
+# we would need id so binding it
+mod_test <- cbind(id, test_mod)
+```
+
+*rf_model prediction on mod_test*
+```{r}
+pred_test <- predict(rf_model, mod_test[,-1], type="prob")
+pred_test <- as.data.frame(pred_test)
+
+PD_Test <- ifelse(pred_test$`1`>0.6,1,0)
+PD_Test <- as.data.frame(PD_Test)
+```
+*We are levying the threshold which we have achieved for the validation set prediction, since the test set is not labelled we are going with the same threshold, if a class in 1 is > 0.6 we are going to classify them as default or else not default.*\vspace{2mm}
+\newline
+
+*PD Model Output*
+```{r}
+result_PD <- cbind(id, PD_Test)
+```
+
+*Tabular Information*
+```{r}
+PD_Def_Non <- table(result_PD$PD_Test)
+PD_Def_Non
+```
+*21 Classes have been predicted default and 25450 observations have been predicted as not default.*\vspace{2mm}
+\newline
+
+*Let's separate the defaulted and non-defaulted so that we can have it for the final file submission*\vspace{2mm}
+\newline
+
+*Filtering 0 and 1s*
+```{r}
+PD_Non_Default <- result_PD %>% filter(PD_Test==0)
+colnames(PD_Non_Default) <- c("id","result")
+
+PD_Default <- result_PD %>% filter(PD_Test==1)
+```
+
+*Loss Given Default Model*\vspace{1mm}
+\newline
+*Sub-Setting*
+```{r}
+# Storing IDs of 21 Defaulted Records
+lgd_input <- PD_Default[,1]
+
+# Sub-Setting only the defaulted IDs for LGD Model
+test_data_lgd <- test_data[test_data$id %in% lgd_input, ]
+```
+
+*Pre-Processing Test Data*
+```{r}
+test_preprocess <- predict(preprocess_lgd, test_data_lgd[,-1])
+```
+
+*Column Count*
+```{r}
+ncol(test_preprocess)
+```
+*After excluding the ID we have 249 columns which is similar to the train and validation column count, let's now subset further by using only the attributes that were selected during the lasso model.*\vspace{2mm}
+\newline
+
+*Lasso Attribute Selection*
+```{r}
+# names_lasso_lgd has the attributes resulted in lasso model
+test_mod_lgd <- test_preprocess[,names_lasso_lgd]
+ncol(test_mod_lgd)
+```
+*Now, we have the same set of attributes which we received post to the application of lasso model*\vspace{2mm}
+\newline
+
+*Prediction Phase - LGD Model - Test*
+```{r}
+x_input_test <- as.matrix(test_mod_lgd)
+
+# Prediction
+predicted_lgd_test <- predict(ridge_model, s = ridge_model$lambda.min, newx = x_input_test)
+```
+
+*Since in training the decision variable was normalized we are multiplying the result to 100*
+```{r}
+predicted_lgd_loss <- abs(predicted_lgd_test*100)
+
+Loss_LGD <- cbind(lgd_input,predicted_lgd_loss)
+colnames(Loss_LGD) <- c("id","result")
+```
+
+*PD_Non_Default has the non-default values and Loss_LGD has the default values binding them together*
+```{r}
+test_results <- rbind(Loss_LGD, PD_Non_Default)
+```
+
+*Display of Defaulted Loss*
+```{r}
+head(test_results)
+```
+
+*Display of Non-Default*
+```{r}
+tail(test_results)
+```
+
+*Saving the file*
+```{r}
+file_test_results <- write.csv(test_results, file="test_results.csv")
+```
